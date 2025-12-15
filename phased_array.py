@@ -28,8 +28,9 @@ class PhasedArray:
         self.id = array_id
         self.elements: List[AntennaElement] = []
         self.curvature_type = curvature_type
+        self.curvature_params = {}
     
-    def add_element(self, x: float, y: float, freq: float) -> None:
+    def _add_element(self, x: float, y: float, freq: float) -> None:
         """
         Add an antenna element to the phased array.
         
@@ -40,6 +41,30 @@ class PhasedArray:
         """
         element = AntennaElement(x, y, freq)
         self.elements.append(element)
+
+    def set_geometry(self, curvature_type: str, num_elements: int,
+                     frequency: float, spacing: float = 0.005,
+                     curvature_params: dict = None) -> None:
+        """
+        Clear existing elements and create new ones at positions based on geometry.
+
+        Args:
+            curvature_type: "linear", "convex", or "concave"
+            num_elements: Number of elements to create
+            frequency: Frequency in Hz for all elements
+            spacing: Distance between elements in meters (default: 0.005)
+            curvature_params: {'radius': float} for curved arrays (default: None)
+
+        Returns:
+            None (modifies self.elements, self.curvature_type, self.curvature_params)
+
+        Must Do:
+            1. Clear self.elements
+            2. Store curvature_type and curvature_params
+            3. Calculate (x, y) positions based on geometry
+            4. Create elements using self._add_element(x, y, frequency)
+        """
+        pass
     
     def steer_beam(self, angle: float) -> None:
         """
