@@ -1,106 +1,149 @@
-"""
-PhasedArray class - Represents a single phased array, composed of multiple antenna elements.
-"""
-
 import numpy as np
-from typing import List
-from .antenna_element import AntennaElement
-
 
 class PhasedArray:
-    """
-    Represents a single phased array, composed of multiple antenna elements.
-    
-    Attributes:
-        id (int): Unique identifier for the phased array
-        elements (List[AntennaElement]): List of antenna elements in the array
-        curvature_type (str): Type of curvature applied to the array
-    """
-    
-    def __init__(self, array_id: int, curvature_type: str = "linear"):
+    def __init__(self, id: int, frequency: np.ndarray, num_elements: int, curvature: float = 0.0):
         """
-        Initialize a phased array.
-        
-        Args:
-            array_id: Unique identifier for the phased array
-            curvature_type: Type of curvature (e.g., "linear", "circular", "convex", "concave")
-        """
-        self.id = array_id
-        self.elements: List[AntennaElement] = []
-        self.curvature_type = curvature_type
-        self.curvature_params = {}
-    
-    def _add_element(self, x: float, y: float, freq: float) -> None:
-        """
-        Add an antenna element to the phased array.
-        
-        Args:
-            x: X coordinate of the element
-            y: Y coordinate of the element
-            freq: Operating frequency of the element
-        """
-        element = AntennaElement(x, y, freq)
-        self.elements.append(element)
-
-    def set_geometry(self, curvature_type: str, num_elements: int,
-                     frequency: float, spacing: float = 0.005,
-                     curvature_params: dict = None) -> None:
-        """
-        Clear existing elements and create new ones at positions based on geometry.
+        Initialize a PhasedArray.
 
         Args:
-            curvature_type: "linear", "convex", or "concave"
-            num_elements: Number of elements to create
-            frequency: Frequency in Hz for all elements
-            spacing: Distance between elements in meters (default: 0.005)
-            curvature_params: {'radius': float} for curved arrays (default: None)
+            id: Unique identifier for this array
+            frequency: Operating frequency in Hz
+            num_elements: Number of elements in the array
+            curvature: Curvature parameter (0 for linear, >0 for arc)
+        """
+        self.id = id
+        self.frequency = frequency
+        self.num_elements = num_elements
+        self.curvature = curvature
 
-        Returns:
-            None (modifies self.elements, self.curvature_type, self.curvature_params)
+        # Internal Vectorized State
+        self.x_coords: np.ndarray = np.array([])
+        self.y_coords: np.ndarray = np.array([])
+        self.phases: np.ndarray = np.array([])
 
-        Must Do:
-            1. Clear self.elements
-            2. Store curvature_type and curvature_params
-            3. Calculate (x, y) positions based on geometry
-            4. Create elements using self._add_element(x, y, frequency)
+        self.c = 3e8  # Speed of light in m/s
+        self.max_freq = np.max(self.frequency)
+        self.wavelength = self.c / self.max_freq
+        self.k = 2 * np.pi / self.wavelength
+
+    def generate_geometry(self, spacing: float, curvature: float):
         """
-        pass
-    
-    def steer_beam(self, angle: float) -> None:
-        """
-        Steer the beam by adjusting phase shifts of all elements.
-        
+        Creates Linear if curvature=0, Circular Arc if curvature>0.
+
         Args:
-            angle: Steering angle (in radians or degrees, depending on implementation)
+            spacing: Element spacing (fraction of wavelength) - typically 0.5
+            curvature: Curvature parameter (1/Radius). 0 = Linear.
         """
-        # Calculate phase shifts for beam steering
-        # This is a simplified implementation
-        wavelength = 1.0 / self.elements[0].frequency if self.elements else 1.0
-        k = 2 * np.pi / wavelength
+        # Update internal curvature state
+        self.curvature = curvature
+
+        element_spacing_m = spacing * self.wavelength
         
-        for i, element in enumerate(self.elements):
-            # Calculate phase shift based on element position and steering angle
-            # This is a simplified model - actual implementation would consider array geometry
-            phase_shift = k * (element.x_position * np.cos(angle) + element.y_position * np.sin(angle))
-            element.set_phase(phase_shift)
-    
-    def get_total_field(self, grid_x: np.ndarray, grid_y: np.ndarray) -> np.ndarray:
-        """
-        Calculate the total field contribution from all elements in the array.
-        
-        Args:
-            grid_x: X coordinates of the evaluation grid (Matrix)
-            grid_y: Y coordinates of the evaluation grid (Matrix)
+        # 2. Calculate Total Arc Length (Physical width of the array)
+        arc_length = (self.num_elements - 1) * element_spacing_m
+
+        # --- CASE A: LINEAR ARRAY ---
+        if np.abs(curvature) < 1e-9:
+            # Create N points centered at 0
+            self.x_coords = np.linspace(
+                -arc_length / 2,
+                arc_length / 2,
+                self.num_elements
+            )
+            # Y is flat
+            self.y_coords = np.zeros(self.num_elements)
+
+        # --- CASE B: CURVED (ARC) ARRAY ---
+        else:
+            # Radius R = 1 / curvature
+            R = 1.0 / curvature
             
-        Returns:
-            ComplexMatrix: Total complex field from all elements
+            # Total angular spread of the array (theta = ArcLength / Radius)
+            total_angle = arc_length * curvature
+            
+            # Generate angles (alpha) centered around 0
+            alpha = np.linspace(
+                -total_angle / 2, 
+                total_angle / 2, 
+                self.num_elements
+            )
+            
+            # Map Polar to Cartesian
+            # x = R * sin(alpha)
+            self.x_coords = R * np.sin(alpha)
+            
+            # y = R * cos(alpha) - R
+            # The '- R' shifts the apex of the curve to (0,0)
+            self.y_coords = (R * np.cos(alpha)) - R
+
+
+    def steer_beam(self, angle_degrees: float):
         """
-        if not self.elements:
-            return np.zeros_like(grid_x, dtype=complex)
+        For 5G Scenario (Far-field).
+        Steers the beam to a specific angle.
+        Uses the general Dot Product rule which works for ANY geometry (Linear, Arc, Random).
+
+        Args:
+            angle_degrees: Steering angle in degrees (0 = Broadside/Straight Ahead)
+        """
+        angle_rad = np.deg2rad(angle_degrees)
+        
+        # Define the Unit Direction Vector of the target (where we want the beam to go)
+        # 0 deg = Straight up (Y-axis)
+        # 90 deg = Right (X-axis)
+        u_x = np.sin(angle_rad)
+        u_y = np.cos(angle_rad)
+        
+        self.phases = -self.k * (self.x_coords * u_x + self.y_coords * u_y)
+
+    def focus_beam(self, target_x: float, target_y: float):
+        """
+        For Medical Scenario (Near-field).
+        Focuses the beam to a specific target point.
+
+        Args:
+            target_x: Target X coordinate in meters
+            target_y: Target Y coordinate in meters
+        """
+        # 1. Calculate Euclidean distance from every element to the target
+        distances = np.sqrt((self.x_coords - target_x)**2 + (self.y_coords - target_y)**2)
+        
+        # 2. Find the longest path (usually the edge elements in a linear array)
+        max_distance = np.max(distances)
+        
+        # 3. Calculate Phase Delays
+        self.phases = -self.k * (max_distance - distances)
+
+
+    def get_electric_field(self, grid_x: np.ndarray, grid_y: np.ndarray) -> np.ndarray:
+        """
+        Returns E = (A/r) * exp(j(kr + phi))
+        Complex electric field at each grid point.
+
+        Args:
+            grid_x: X coordinates of grid points (2D array)
+            grid_y: Y coordinates of grid points (2D array)
+
+        Returns:
+            Complex electric field array (same shape as grid_x/grid_y)
+        """
+        # Initialize field
+        field = np.zeros_like(grid_x, dtype=complex)
         
         # Sum contributions from all elements
-        total_field = np.zeros_like(grid_x, dtype=complex)
-        for element in self.elements:
-            total_field += element.compute_field_contribution(grid_x, grid_y)
+        for i in range(self.num_elements):
+            # Distance from element i to each grid point
+            r = np.sqrt((grid_x - self.x_coords[i])**2 + (grid_y - self.y_coords[i])**2)
+            
+            # Avoid division by zero
+            r = np.maximum(r, 1e-10)
+            
+            # Amplitude decays as 1/r, phase includes k*r and element phase
+            amplitude = 1.0 / r
+            phase = self.k * r + self.phases[i]
+            
+            # Add contribution from this element
+            field += amplitude * np.exp(1j * phase)
         
-        return total_field
+        return field
+
