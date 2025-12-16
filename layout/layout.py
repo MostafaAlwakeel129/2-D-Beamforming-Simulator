@@ -60,31 +60,7 @@ def create_sidebar():
     """Creates the left sidebar with all controls"""
     return html.Div([
 
-        # CARD 1: Mode Selection
-        html.Div([
-            html.H5("Select a Mode", style={
-                "color": NEON_TEAL,
-                "textAlign": "center",
-                "marginTop": "-22px",
-                "backgroundColor": "#060606",
-                "width": "fit-content",
-                "margin": "-10px auto 8px auto",
-                "padding": "0 10px",
-                "fontSize": "15px"
-            }),
-            html.Label("Mode:", style=label_style),
-            dcc.Dropdown(
-                id='mode-dropdown',
-                options=[
-                    {'label': 'Transmitter', 'value': 'tx'},
-                    {'label': 'Receiver', 'value': 'rx'}
-                ],
-                value='tx',
-                style={'color': 'black', 'fontSize': '13px'}
-            )
-        ], style=card_style),
-
-        # CARD 2: Beamforming Parameters
+        # CARD 1: Beamforming Parameters
         html.Div([
             html.H5("Beamforming Parameters", style={
                 "color": NEON_TEAL,
@@ -97,15 +73,18 @@ def create_sidebar():
                 "fontSize": "15px"
             }),
 
-            # Frequency Slider
-            html.Label("Frequency (Hz):", style=label_style),
-            dcc.Slider(
-                id='freq-slider',
-                min=100, max=1000, step=10, value=500,
-                tooltip={"placement": "bottom", "always_visible": True},
-                marks=None
+            # Number of Transmitters Dropdown (moved to top)
+            html.Label("Transmitters Number:", style=label_style),
+            dcc.Dropdown(
+                id='num-transmitters-dropdown',
+                options=[{'label': str(i), 'value': i} for i in range(1, 17)],
+                value=2,
+                style={'color': 'black', 'fontSize': '13px'}
             ),
-            html.Div(style={"marginBottom": "8px"}),
+            html.Div(style={"marginBottom": "15px"}),
+
+            # Dynamic Frequency Sliders Container
+            html.Div(id='frequency-sliders-container'),
 
             # Phase Shift Slider
             html.Label("Phase Shift (°):", style=label_style),
@@ -115,7 +94,7 @@ def create_sidebar():
                 tooltip={"placement": "bottom", "always_visible": True},
                 marks=None
             ),
-            html.Div(style={"marginBottom": "8px"}),
+            html.Div(style={"marginBottom": "12px"}),
 
             # Transmitter Position Slider
             html.Label("Transmitter Position:", style=label_style),
@@ -125,7 +104,7 @@ def create_sidebar():
                 tooltip={"placement": "bottom", "always_visible": True},
                 marks=None
             ),
-            html.Div(style={"marginBottom": "8px"}),
+            html.Div(style={"marginBottom": "12px"}),
 
             # Curvature Slider
             html.Label("Curvature:", style=label_style),
@@ -137,17 +116,9 @@ def create_sidebar():
             ),
             html.Div(style={"marginBottom": "8px"}),
 
-            # Number of Transmitters Dropdown
-            html.Label("Transmitters Number:", style=label_style),
-            dcc.Dropdown(
-                id='num-transmitters-dropdown',
-                options=[{'label': str(i), 'value': i} for i in range(1, 17)],
-                value=2,
-                style={'color': 'black', 'fontSize': '13px'}
-            ),
         ], style=card_style),
 
-        # CARD 3: Scenario Selection
+        # CARD 2: Scenario Selection
         html.Div([
             html.H5("Scenario", style={
                 "color": NEON_TEAL,
