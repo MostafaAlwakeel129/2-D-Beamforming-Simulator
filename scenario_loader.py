@@ -5,7 +5,7 @@ Satisfies "Equip simulator with at least three scenarios"
 Compatible with Single-Array SystemController
 """
 
-from .system_controller import SystemController
+from system_controller import SystemController
 import numpy as np
 
 class ScenarioLoader:

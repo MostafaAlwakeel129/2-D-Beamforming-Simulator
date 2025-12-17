@@ -8,8 +8,15 @@ import dash_bootstrap_components as dbc
 from layout.layout import create_layout
 from callbacks.callbacks import register_callbacks
 
-# Initialize the app with a dark theme (CYBORG closely matches your screenshot)
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
+# --- UX IMPROVEMENT: Add Google Font (Exo 2) ---
+# We use 'Exo 2' for a futuristic, technical look.
+FONT_URL = "https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;700&display=swap"
+
+app = dash.Dash(
+    __name__,
+    external_stylesheets=[dbc.themes.CYBORG, FONT_URL],
+    title="BeamLab Sim" # Browser Tab Title
+)
 
 # Set the layout
 app.layout = create_layout()
