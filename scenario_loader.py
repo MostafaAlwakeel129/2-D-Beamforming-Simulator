@@ -37,25 +37,15 @@ class ScenarioLoader:
 
     @staticmethod
     def load_tumor_ablation_scenario() -> SystemController:
-        """
-        SCENARIO 2: Tumor Ablation / HIFU (Near-Field)
-        - Low Frequency (1 MHz) for deep penetration
-        - Highly Curved Array (HIFU Transducer)
-        - Focused Beam (Converges on a specific point)
-        """
+        """SCENARIO 2: Tumor Ablation / HIFU (Near-Field)"""
         controller = SystemController(resolution=200)
         
-        # Configure for Focused Ultrasound
-        # We use a highly curved array (Arc) to create a natural geometric focus
         controller.update_parameters({
-            'frequency': 1e6,        # 1 MHz
-            'num_elements': 32,      # More elements for better focusing energy
+            'frequency': 1e6,
+            'num_elements': 32,
             'spacing': 0.5,
-            'curvature': 2.0,        # Radius = 0.5m (Significant curve)
-            
-            # Focus at a point 40cm in front of the array (0, 0.4)
-            # Since the array is centered at (0,0), this shoots "up/forward"
-            'focus_target': (0.0, 0.4) 
+            'curvature': 2.0,
+            'focus_target': (0.0, 5.0)  # Adjusted for larger grid
         })
         
         return controller
