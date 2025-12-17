@@ -15,15 +15,16 @@ class Visualizer:
         """
         # Remove percentile clipping - use full range since we normalized to [0,1]
         # v_max = np.percentile(field_magnitude, 98)  # Remove this
-        
+
         # 1. The Heatmap Trace
         heatmap = go.Heatmap(
             z=field_magnitude,
             x=grid_x[0, :],
             y=grid_y[:, 0],
-            colorscale='RdBu_r',  # Changed from 'Jet' to match 'coolwarm'
+            colorscale='Inferno',
             zmin=0,
             zmax=1,  # Changed to use full normalized range
+            zsmooth='fast', #Added to enhance the quality
             showscale=True,
             colorbar=dict(
                 title=dict(text="INTENSITY", font=dict(color='white', family="'Exo 2', sans-serif")),
@@ -31,7 +32,7 @@ class Visualizer:
                 thickness=15
             )
         )
-        
+
         # 2. Antennas
         antennas = go.Scatter(
             x=array_obj.x_coords,
@@ -40,7 +41,7 @@ class Visualizer:
             marker=dict(color='blue', size=10, line=dict(color='white', width=2)),
             showlegend=False
         )
-        
+
         fig = go.Figure(data=[heatmap, antennas])
         fig.update_layout(
             title="FIELD INTENSITY MAP",
@@ -49,19 +50,19 @@ class Visualizer:
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="black",
             margin=dict(l=60, r=40, t=50, b=50),
-            
+
             xaxis=dict(
                 title="LATERAL POSITION (m)",
                 title_font=dict(family="'Exo 2', sans-serif"),
-                showgrid=True, 
-                gridcolor='#333', 
+                showgrid=True,
+                gridcolor='#333',
                 range=[-10, 10]  # Updated range
             ),
             yaxis=dict(
                 title="DEPTH (m)",
                 title_font=dict(family="'Exo 2', sans-serif"),
-                showgrid=True, 
-                gridcolor='#333', 
+                showgrid=True,
+                gridcolor='#333',
                 range=[0, 20]  # Updated range
             ),
         )

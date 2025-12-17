@@ -57,7 +57,7 @@ import numpy as np
 from system_controller import SystemController
 from visualizer import Visualizer
 
-controller = SystemController(resolution=100)
+controller = SystemController(resolution=1000)
 
 
 def register_callbacks(app):
