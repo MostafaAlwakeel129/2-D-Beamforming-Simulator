@@ -1,76 +1,36 @@
-# from dash import Input, Output, html, dcc
-# from dash.exceptions import PreventUpdate
-#
-# # Styles for consistency
-# NEON_TEAL = "#ffffff"
-#
-# label_style = {
-#     "color": NEON_TEAL,
-#     "fontWeight": "bold",
-#     "marginBottom": "3px",
-#     "fontSize": "13px"
-# }
-#
-#
-# def register_callbacks(app):
-#     """Register all callbacks for the application"""
-#
-#     @app.callback(
-#         Output('frequency-sliders-container', 'children'),
-#         Input('num-transmitters-dropdown', 'value')
-#     )
-#     def update_frequency_sliders(num_transmitters):
-#         """
-#         Dynamically generate frequency sliders based on number of transmitters
-#
-#         Args:
-#             num_transmitters: Number of transmitters selected
-#
-#         Returns:
-#             List of Div elements containing frequency sliders
-#         """
-#         if num_transmitters is None:
-#             raise PreventUpdate
-#
-#         sliders = []
-#
-#         for i in range(num_transmitters):
-#             slider_div = html.Div([
-#                 html.Label(f"Transmitter Frequency-{i+1}", style=label_style),
-#                 dcc.Slider(
-#                     id={'type': 'freq-slider', 'index': i},
-#                     min=100,
-#                     max=1000,
-#                     step=10,
-#                     value=500,
-#                     tooltip={"placement": "bottom", "always_visible": True},
-#                     marks=None
-#                 ),
-#                 html.Div(style={"marginBottom": "12px"})
-#             ])
-#             sliders.append(slider_div)
-#
-#         return sliders
-
 from dash import Input, Output, ALL, html, dcc
 import numpy as np
 from system_controller import SystemController
 from visualizer import Visualizer
+from scenario_loader import ScenarioLoader
 
-controller = SystemController(resolution=1000)
+controller = SystemController(resolution=200)
 
 
 def register_callbacks(app):
-    # 1. FREQUENCY SLIDERS
-    @app.callback(Output('frequency-sliders-container', 'children'), Input('num-elements-slider', 'value'))
-    def update_frequency_inputs(num):
+    # 1. FREQUENCY SLIDERS (Dynamic Generation)
+    @app.callback(
+        Output('frequency-sliders-container', 'children'),
+        [Input('num-elements-slider', 'value'),
+         Input('scenario-dropdown', 'value')]
+    )
+    def update_frequency_inputs(num, scenario):
+        # Determine default freq based on scenario
+
+        if scenario == '5g':
+            default_val = ScenarioLoader.get_5g_scenario()['default_freq']
+        elif scenario == 'tumor' :
+            default_val = ScenarioLoader.get_tumor_ablation_scenario()['default_freq']
+        elif scenario == 'ultrasound':
+            default_val = ScenarioLoader.get_ultrasound_scenario()['default_freq']
+
         return [html.Div([
             html.Label(f"Elem {i + 1}",
                        style={"fontSize": "10px", "color": "#aaa", "width": "45px", "display": "inline-block"}),
             html.Div([
                 dcc.Slider(
                     id={'type': 'freq-slider', 'index': i},
-                    min=0.5, max=5.0, step=0.1, value=1.0,
+                    min=0.5, max=5.0, step=0.1, value=default_val,
                     marks={0.5: '0.5', 5: '5'},
                     tooltip={"placement": "right", "always_visible": False}
                 )
@@ -79,25 +39,49 @@ def register_callbacks(app):
 
     # 2. SCENARIO UI MANAGER
     @app.callback(
-        [Output('focus-controls', 'style'), Output('curvature-slider', 'value'), Output('steer-angle-slider', 'value')],
+        [Output('focus-controls', 'style'),
+         Output('num-elements-slider', 'value'),
+         Output('curvature-slider', 'value'),
+         Output('spacing-unit-radio', 'value'),
+         Output('spacing-slider', 'value'),
+         Output('steer-angle-slider', 'value'),
+         Output('focus-x-slider', 'value'),
+         Output('focus-y-slider', 'value')],
         Input('scenario-dropdown', 'value')
     )
     def update_scenario_ui(scenario):
+        # 1. Fetch parameters dictionary
         if scenario == '5g':
-            return {'display': 'none'}, 0.0, 30.0
+            params = ScenarioLoader.get_5g_scenario()
+            style = {'display': 'none'}
         elif scenario == 'tumor':
-            return {'display': 'block'}, 2.0, 0.0
-        else:
-            return {'display': 'block'}, 0.0, 0.0
+            params = ScenarioLoader.get_tumor_ablation_scenario()
+            style = {'display': 'block'}
+        else:  # ultrasound
+            params = ScenarioLoader.get_ultrasound_scenario()
+            style = {'display': 'block'}
 
-    # 3. SPACING SLIDER RANGE UPDATE (Fixes the "Corruption")
+        # 2. Return values in order of Outputs
+        return (
+            style,
+            params['num_elements'],
+            params['curvature'],
+            params['spacing_unit'],
+            params['spacing_val'],
+            params['steer_angle'],
+            params['focus_x'],
+            params['focus_y']
+        )
+
+    # 3. SPACING SLIDER RANGE UPDATE
     @app.callback(
         [Output('spacing-slider', 'min'),
          Output('spacing-slider', 'max'),
-         Output('spacing-slider', 'value'),
+         Output('spacing-slider', 'value',allow_duplicate=True),
          Output('spacing-slider', 'step'),
-         Output('spacing-slider', 'marks')],  # <--- Crucial Fix: Updates step precision
-        Input('spacing-unit-radio', 'value')
+         Output('spacing-slider', 'marks')],
+        Input('spacing-unit-radio', 'value'),
+        prevent_initial_call = True
     )
     def update_spacing_range(unit):
         if unit == 'meter':
