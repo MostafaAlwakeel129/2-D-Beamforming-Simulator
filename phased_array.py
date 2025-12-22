@@ -80,7 +80,7 @@ class PhasedArray:
             r = np.sqrt((grid_x - self.x_coords[i])**2 + (grid_y - self.y_coords[i])**2)
             r = np.maximum(r, 1e-6)
             freq_scaling = self.frequencies[i] / max_freq
-            field += freq_scaling * np.sin(self.k_vec[i] * r + self.phases[i])
+            field += (freq_scaling / (r**0.3)) * np.sin(self.k_vec[i] * r + self.phases[i])
         return field
 
     def calculate_azimuth_profile(self, angles_deg):
