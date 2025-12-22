@@ -1,43 +1,31 @@
-"""
-Visualizer Class - Plotting Helper
-Responsibility: Visualization of simulation results
-"""
-
 import numpy as np
 import plotly.graph_objects as go
 
 class Visualizer:
+    # Unified Styling Constants
+    STYLE = {
+        "font": dict(family="'Exo 2', sans-serif", color='white'),
+        "cyan": "#00f2ff",
+        "orange": "#ff8c00",
+        "grid": "#333",
+        "bg_transparent": "rgba(0,0,0,0)"
+    }
 
     @staticmethod
     def plot_heatmap(field_magnitude, grid_x, grid_y, array_obj):
-        """
-        Generates the Heatmap with PyQt5-style appearance.
-        """
-        # Remove percentile clipping - use full range since we normalized to [0,1]
-        # v_max = np.percentile(field_magnitude, 98)  # Remove this
-
-        # 1. The Heatmap Trace
+        """Generates the Intensity Heatmap."""
         heatmap = go.Heatmap(
-            z=field_magnitude,
-            x=grid_x[0, :],
-            y=grid_y[:, 0],
-            colorscale='Inferno',
-            zmin=0,
-            zmax=1,  # Changed to use full normalized range
-            zsmooth='fast', #Added to enhance the quality
-            showscale=True,
+            z=field_magnitude, x=grid_x[0, :], y=grid_y[:, 0],
+            colorscale='Inferno', zmin=0, zmax=1, zsmooth='fast',
             colorbar=dict(
-                title=dict(text="INTENSITY", font=dict(color='white', family="'Exo 2', sans-serif")),
-                tickfont=dict(color='#ccc', family="'Exo 2', sans-serif"),
+                title=dict(text="INTENSITY", font=Visualizer.STYLE["font"]),
+                tickfont=dict(color='#ccc', family=Visualizer.STYLE["font"]["family"]),
                 thickness=15
             )
         )
 
-        # 2. Antennas
         antennas = go.Scatter(
-            x=array_obj.x_coords,
-            y=array_obj.y_coords,
-            mode='markers',
+            x=array_obj.x_coords, y=array_obj.y_coords, mode='markers',
             marker=dict(color='blue', size=10, line=dict(color='white', width=2)),
             showlegend=False
         )
@@ -45,73 +33,44 @@ class Visualizer:
         fig = go.Figure(data=[heatmap, antennas])
         fig.update_layout(
             title="FIELD INTENSITY MAP",
-            title_font=dict(color='#00f2ff', family="'Exo 2', sans-serif", size=18, weight=700),
+            title_font=dict(color=Visualizer.STYLE["cyan"], family=Visualizer.STYLE["font"]["family"], size=18, weight=700),
             template="plotly_dark",
-            paper_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor=Visualizer.STYLE["bg_transparent"],
             plot_bgcolor="black",
-            margin=dict(l=60, r=40, t=50, b=50),
-
-            xaxis=dict(
-                title="LATERAL POSITION (m)",
-                title_font=dict(family="'Exo 2', sans-serif"),
-                showgrid=True,
-                gridcolor='#333',
-                range=[-10, 10]  # Updated range
-            ),
-            yaxis=dict(
-                title="DEPTH (m)",
-                title_font=dict(family="'Exo 2', sans-serif"),
-                showgrid=True,
-                gridcolor='#333',
-                range=[0, 20]  # Updated range
-            ),
+            xaxis=dict(title="LATERAL POSITION (m)", title_font=Visualizer.STYLE["font"], gridcolor=Visualizer.STYLE["grid"], range=[-10, 10]),
+            yaxis=dict(title="DEPTH (m)", title_font=Visualizer.STYLE["font"], gridcolor=Visualizer.STYLE["grid"], range=[0, 20]),
+            margin=dict(l=60, r=40, t=50, b=50)
         )
         return fig
 
     @staticmethod
     def plot_polar_beam_profile(angles_deg, response):
-        """
-        Generates the Polar Beam Profile with 'Exo 2' styling.
-        """
+        """Generates the Polar Beam Profile."""
         max_val = np.max(response)
-        if max_val > 1e-9:
-            response = response / max_val
-        else:
-            response = np.zeros_like(response)
-
-        plot_theta = angles_deg + 90
+        r_vals = response / max_val if max_val > 1e-9 else np.zeros_like(response)
 
         trace = go.Scatterpolar(
-            r=response,
-            theta=plot_theta,
-            mode='lines',
-            fill='toself',
-            line=dict(color='#ff8c00', width=3),
-            name='Beam Pattern'
+            r=r_vals, theta=angles_deg + 90, mode='lines', fill='toself',
+            line=dict(color=Visualizer.STYLE["orange"], width=3), name='Beam Pattern'
         )
 
         fig = go.Figure(data=[trace])
         fig.update_layout(
             title="BEAM PROFILE (NORMALIZED)",
-            title_font=dict(color='#ff8c00', family="'Exo 2', sans-serif", size=18, weight=700),
+            title_font=dict(color=Visualizer.STYLE["orange"], family=Visualizer.STYLE["font"]["family"], size=18, weight=700),
             template="plotly_dark",
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            # FIX: Minimized margins to make plot HUGE
-            margin=dict(l=30, r=30, t=40, b=10),
-
+            paper_bgcolor=Visualizer.STYLE["bg_transparent"],
             polar=dict(
                 sector=[0, 180],
-                radialaxis=dict(visible=True, range=[0, 1.1], showticklabels=False, gridcolor='#333'),
+                radialaxis=dict(visible=True, range=[0, 1.1], showticklabels=False, gridcolor=Visualizer.STYLE["grid"]),
                 angularaxis=dict(
-                    direction="counterclockwise",
+                    direction="counterclockwise", rotation=0, gridcolor='#444',
                     tickvals=[0, 30, 60, 90, 120, 150, 180],
                     ticktext=["0°", "30°", "60°", "90°", "120°", "150°", "180°"],
-                    tickfont=dict(family="'Exo 2', sans-serif", size=14), # Larger font
-                    gridcolor='#444',
-                    rotation=0
+                    tickfont=dict(family=Visualizer.STYLE["font"]["family"], size=14)
                 ),
-                bgcolor="rgba(0,0,0,0)"
-            )
+                bgcolor=Visualizer.STYLE["bg_transparent"]
+            ),
+            margin=dict(l=30, r=30, t=40, b=10)
         )
         return fig

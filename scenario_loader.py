@@ -20,7 +20,8 @@ class ScenarioLoader:
             'steer_angle': 30.0,
             'focus_x': 0.0,          # Ignored in 5G mode
             'focus_y': 0.5,
-            'default_freq': 5.0
+            'default_freq': 5.0,
+            'wave_speed': 3e8
         }
 
     @staticmethod
@@ -39,7 +40,8 @@ class ScenarioLoader:
             'steer_angle': 0.0,
             'focus_x': 0.0,
             'focus_y': 5.0,
-            'default_freq': 1.0
+            'default_freq': 1.0,
+            'wave_speed': 1540
         }
 
     @staticmethod
@@ -58,5 +60,6 @@ class ScenarioLoader:
             'steer_angle': 0.0,
             'focus_x': 0.0,
             'focus_y': 2.0,
-            'default_freq': 2.5
+            'default_freq': 2.5,
+            'wave_speed': 1540
         }
