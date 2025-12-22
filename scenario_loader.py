@@ -18,10 +18,12 @@ class ScenarioLoader:
             'spacing_unit': 'lambda',
             'spacing_val': 0.5,
             'steer_angle': 30.0,
-            'focus_x': 0.0,          # Ignored in 5G mode
+            'focus_x': 0.0,  # Ignored in 5G mode
             'focus_y': 0.5,
             'default_freq': 5.0,
-            'wave_speed': 3e8
+            'wave_speed': 3e8,
+            'grid_width': 20.0,  # 20 Meters wide
+            'grid_depth': 20.0  # 20 Meters deep
         }
 
     @staticmethod
@@ -39,9 +41,11 @@ class ScenarioLoader:
             'spacing_val': 0.5,
             'steer_angle': 0.0,
             'focus_x': 0.0,
-            'focus_y': 5.0,
+            'focus_y': 0.12,  # Focus at 12cm depth
             'default_freq': 1.0,
-            'wave_speed': 1540
+            'wave_speed': 1540,
+            'grid_width': 0.30,  # 30 cm wide
+            'grid_depth': 0.30  # 30 cm deep
         }
 
     @staticmethod
@@ -59,7 +63,9 @@ class ScenarioLoader:
             'spacing_val': 0.5,
             'steer_angle': 0.0,
             'focus_x': 0.0,
-            'focus_y': 2.0,
+            'focus_y': 0.10,  # Focus at 10cm
             'default_freq': 2.5,
-            'wave_speed': 1540
+            'wave_speed': 1540,
+            'grid_width': 0.20,  # 20 cm wide
+            'grid_depth': 0.20  # 20 cm deep
         }

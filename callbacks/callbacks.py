@@ -108,13 +108,25 @@ def register_callbacks(app):
 
         freq_array = np.array(freqs) * 1e9 if freqs else np.ones(num) * 1e9
 
+        # Fetch hidden physics parameters based on scenario
+        if scenario == '5g':
+            physics_params = ScenarioLoader.get_5g_scenario()
+        elif scenario == 'tumor':
+            physics_params = ScenarioLoader.get_tumor_ablation_scenario()
+        else:
+            physics_params = ScenarioLoader.get_ultrasound_scenario()
+
         params = {
             'num_elements': num,
             'curvature': curv,
             'spacing_val': space_val,
             'spacing_unit': space_unit,
             'frequencies': freq_array,
-            'steer_angle': angle
+            'steer_angle': angle,
+            # Add Physics Parameters
+            'wave_speed': physics_params['wave_speed'],
+            'grid_width': physics_params.get('grid_width', 20.0),
+            'grid_depth': physics_params.get('grid_depth', 20.0)
         }
 
         if scenario != '5g':

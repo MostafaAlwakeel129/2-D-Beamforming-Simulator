@@ -14,6 +14,10 @@ class Visualizer:
     @staticmethod
     def plot_heatmap(field_magnitude, grid_x, grid_y, array_obj):
         """Generates the Intensity Heatmap."""
+        # Detect ranges dynamically from the Grid
+        min_x, max_x = grid_x.min(), grid_x.max()
+        max_y = grid_y.max()
+
         heatmap = go.Heatmap(
             z=field_magnitude, x=grid_x[0, :], y=grid_y[:, 0],
             colorscale='Inferno', zmin=0, zmax=1, zsmooth='fast',
@@ -33,12 +37,15 @@ class Visualizer:
         fig = go.Figure(data=[heatmap, antennas])
         fig.update_layout(
             title="FIELD INTENSITY MAP",
-            title_font=dict(color=Visualizer.STYLE["cyan"], family=Visualizer.STYLE["font"]["family"], size=18, weight=700),
+            title_font=dict(color=Visualizer.STYLE["cyan"], family=Visualizer.STYLE["font"]["family"], size=18,
+                            weight=700),
             template="plotly_dark",
             paper_bgcolor=Visualizer.STYLE["bg_transparent"],
             plot_bgcolor="black",
-            xaxis=dict(title="LATERAL POSITION (m)", title_font=Visualizer.STYLE["font"], gridcolor=Visualizer.STYLE["grid"], range=[-10, 10]),
-            yaxis=dict(title="DEPTH (m)", title_font=Visualizer.STYLE["font"], gridcolor=Visualizer.STYLE["grid"], range=[0, 20]),
+            xaxis=dict(title="LATERAL POSITION (m)", title_font=Visualizer.STYLE["font"],
+                       gridcolor=Visualizer.STYLE["grid"], range=[min_x, max_x]),
+            yaxis=dict(title="DEPTH (m)", title_font=Visualizer.STYLE["font"], gridcolor=Visualizer.STYLE["grid"],
+                       range=[0, max_y]),
             margin=dict(l=60, r=40, t=50, b=50)
         )
         return fig

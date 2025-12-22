@@ -24,6 +24,11 @@ class PhasedArray:
         """Internal helper to cache wavenumbers."""
         self.k_vec = 2 * np.pi * self.frequencies / self.WAVE_SPEED
 
+    def set_speed_of_wave(self, speed: float):
+        """Update propagation speed (Light vs Sound) and refresh wavenumbers."""
+        self.WAVE_SPEED = speed
+        self._update_k_vec()
+
     def update_frequencies(self, freq_list):
         """Update frequency for each element and refresh wavenumbers."""
         if len(freq_list) != self.num_elements:
