@@ -35,7 +35,7 @@ class ScenarioLoader:
         - Focused electronically at (0, 5)
         """
         return {
-            'num_elements': 16,
+            'num_elements': 32,
             'curvature': 2.0,
             'spacing_unit': 'lambda',
             'spacing_val': 0.5,
@@ -57,7 +57,7 @@ class ScenarioLoader:
         - Scanning straight ahead
         """
         return {
-            'num_elements': 16,
+            'num_elements': 64,
             'curvature': 0.0,
             'spacing_unit': 'lambda',
             'spacing_val': 0.5,

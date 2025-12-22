@@ -289,8 +289,8 @@ def create_sidebar():
             html.Label("Number of Elements:", style=label_style),
             dcc.Slider(
                 id='num-elements-slider',
-                min=2, max=16, step=1, value=8,
-                marks={2: '2', 8: '8', 16: '16'},
+                min=2, max=64, step=1, value=16,
+                marks={2: '2', 16: '16', 32: '32', 64: '64'},
                 tooltip={"placement": "bottom", "always_visible": False}
             ),
             html.Div(style={"marginBottom": "15px"}),
